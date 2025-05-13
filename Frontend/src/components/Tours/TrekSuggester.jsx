@@ -35,9 +35,19 @@ const TrekSuggester = () => {
 
   // Add trek images for visual appeal
   const trekImages = [
-    "https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-    "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-    "https://images.unsplash.com/photo-1551632785-6f9b2c2c0c0c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+    "/src/assets/places/1.png",
+    "/src/assets/places/2.png",
+    "/src/assets/places/3.png",
+    "/src/assets/places/5.jpg",
+    "/src/assets/places/6.jpg",
+    "/src/assets/places/7.jpg",
+    "/src/assets/places/8.jpg",
+    "/src/assets/places/9.jpg",
+    "/src/assets/places/10.jpg",
+    "/src/assets/18.jpg",
+    "/src/assets/19.jpg",
+    "/src/assets/22.jpg",
+    "/src/assets/23.jpg",
   ];
 
   const handleInterestToggle = (interest) => {

@@ -23,13 +23,16 @@ import TravelAssistant from "./components/AI/TravelAssistant";
 import Navbar from "./components/Navbar/Navbar";
 import Login from "./components/Auth/Login";
 import Register from "./components/Auth/Register";
-import Dashboard from "./pages/Dashboard/UserDashboard";
 import TourSuggestions from "./components/Tours/TourSuggestions";
 import TourDetails from "./components/Tours/TourDetails";
 import TrekSuggester from "./components/Tours/TrekSuggester";
 import Chatbot from "./components/AI/Chatbot";
 import UserProfile from "./components/Profile/UserProfile";
 import TrekDetails from "./components/Tours/TrekDetails";
+import ReviewAnalyzer from "./components/AI/ReviewAnalyzer";
+import ItineraryGenerator from "./components/AI/ItineraryGenerator";
+import PackingAssistant from "./components/AI/PackingAssistant";
+import EmotionTrips from "./components/AI/EmotionTrips";
 
 const App = () => {
   React.useEffect(() => {
@@ -47,48 +50,61 @@ const App = () => {
       <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <Navbar />
-          <Routes>
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly={true}>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-            </Route>
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute adminOnly={true}>
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                </Route>
 
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="blogs" element={<Blogs />} />
-              <Route path="blogs/:id" element={<BlogDetails />} />
-              <Route path="best-places" element={<BestPlaces />} />
-              <Route path="about" element={<About />} />
-              <Route path="contact" element={<Contact />} />
-              <Route
-                path="dashboard"
-                element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="places/*" element={<PlacesRoute />} />
-            </Route>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="blogs" element={<Blogs />} />
+                  <Route path="blogs/:id" element={<BlogDetails />} />
+                  <Route path="best-places" element={<BestPlaces />} />
+                  <Route path="about" element={<About />} />
+                  <Route path="contact" element={<Contact />} />
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <UserDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="places/*" element={<PlacesRoute />} />
+                </Route>
 
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tours" element={<TourSuggestions />} />
-            <Route path="/tours/:id" element={<TourDetails />} />
-            <Route path="/trek-suggester" element={<TrekSuggester />} />
-            <Route path="/trek-details" element={<TrekDetails />} />
-            <Route path="/chatbot" element={<Chatbot />} />
-            <Route path="/travel-assistant" element={<TravelAssistant />} />
-            <Route path="/profile" element={<UserProfile />} />
-          </Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/tours" element={<TourSuggestions />} />
+                <Route path="/tours/:id" element={<TourDetails />} />
+                <Route path="/trek-suggester" element={<TrekSuggester />} />
+                <Route path="/trek-details" element={<TrekDetails />} />
+                <Route path="/chatbot" element={<Chatbot />} />
+                <Route path="/travel-assistant" element={<TravelAssistant />} />
+                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/review-analyzer" element={<ReviewAnalyzer />} />
+                <Route
+                  path="/itinerary-generator"
+                  element={<ItineraryGenerator />}
+                />
+                <Route
+                  path="/packing-assistant"
+                  element={<PackingAssistant />}
+                />
+                <Route path="/emotion-trips" element={<EmotionTrips />} />
+              </Routes>
+            </main>
+          </div>
           <ToastContainer
             position="top-right"
             autoClose={3000}

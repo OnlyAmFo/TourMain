@@ -2,19 +2,11 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-// Initialize Hugging Face client with error handling
-const HUGGINGFACE_API_URL = 'https://api-inference.huggingface.co/models/distilgpt2';
-let huggingfaceApiKey;
-
-try {
-  if (!process.env.HUGGINGFACE_API_KEY) {
-    throw new Error('HUGGINGFACE_API_KEY is not set in environment variables');
-  }
-  huggingfaceApiKey = process.env.HUGGINGFACE_API_KEY;
-  console.log('Hugging Face API Key initialized');
-} catch (error) {
-  console.error('Error initializing Hugging Face client:', error.message);
-}
+// Initialize OpenRouter API configuration
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = "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";
+const SITE_URL = "http://localhost:3000"; // Update this with your actual site URL
+const SITE_NAME = "TourApp"; // Update this with your site name
 
 // Predefined travel destinations and descriptions
 const popularDestinations = {
@@ -63,7 +55,7 @@ const formatResponse = (destinations) => {
 
 // AI Travel Recommendations
 router.post('/recommendations', async (req, res) => {
-  if (!huggingfaceApiKey) {
+  if (!OPENROUTER_API_KEY) {
     return res.status(503).json({ 
       error: 'AI service is currently unavailable. Please check your API configuration.' 
     });
@@ -78,26 +70,28 @@ router.post('/recommendations', async (req, res) => {
     const prompt = `Based on these destinations: ${baseResponse}\n\nCustomize this recommendation for someone with these preferences:\nBudget: ${preferences.budget}\nDuration: ${preferences.duration}\nInterests: ${preferences.interests.join(', ')}\nTravel Style: ${preferences.travelStyle}\n\nHere's a personalized recommendation:`;
 
     const response = await axios.post(
-      HUGGINGFACE_API_URL,
+      OPENROUTER_API_URL,
       {
-        inputs: prompt,
-        parameters: {
-          max_length: 200,
-          temperature: 0.7,
-          top_p: 0.95,
-          repetition_penalty: 1.2
-        }
+        model: "deepseek/deepseek-prover-v2:free",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
       },
       {
         headers: {
-          'Authorization': `Bearer ${huggingfaceApiKey}`,
-          'Content-Type': 'application/json'
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "HTTP-Referer": SITE_URL,
+          "X-Title": SITE_NAME,
+          "Content-Type": "application/json"
         }
       }
     );
 
     // Combine the base response with the AI customization
-    const finalResponse = `${baseResponse}\n\nPersonalized Recommendation:\n${response.data[0].generated_text}`;
+    const finalResponse = `${baseResponse}\n\nPersonalized Recommendation:\n${response.data.choices[0].message.content}`;
     res.json({ recommendations: finalResponse });
   } catch (error) {
     console.error('Error getting AI recommendations:', error.response?.data || error.message);
@@ -110,43 +104,63 @@ router.post('/recommendations', async (req, res) => {
 
 // AI Trip Plan
 router.post('/trip-plan', async (req, res) => {
-  if (!huggingfaceApiKey) {
-    return res.status(503).json({ 
-      error: 'AI service is currently unavailable. Please check your API configuration.' 
-    });
-  }
-
   try {
     const { destination, duration, preferences } = req.body;
-    const location = destination.toLowerCase();
-    const basePlan = popularDestinations[location]?.[0] || popularDestinations.default[0];
-    
-    const prompt = `Create a ${duration}-day trip plan for ${destination} based on this information:\n${JSON.stringify(basePlan)}\n\nPreferences:\nTravel Style: ${preferences.travelStyle}\nInterests: ${preferences.interests.join(', ')}\nBudget: ${preferences.budget}\n\nHere's the plan:`;
 
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OpenRouter API key is not configured' });
+    }
+
+    // Call OpenRouter AI API
     const response = await axios.post(
-      HUGGINGFACE_API_URL,
+      'https://openrouter.ai/api/v1/chat/completions',
       {
-        inputs: prompt,
-        parameters: {
-          max_length: 300,
-          temperature: 0.7,
-          top_p: 0.95,
-          repetition_penalty: 1.2
-        }
+        model: 'openai/gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert travel planner specializing in creating detailed day-by-day itineraries for Nepal. Always provide specific locations and activities that exist in Nepal.'
+          },
+          {
+            role: 'user',
+            content: `Create a detailed ${duration}-day itinerary for ${destination}, Nepal with the following preferences:
+            Travel Style: ${preferences.travelStyle}
+            Interests: ${preferences.interests.join(', ')}
+            Budget: ${preferences.budget}
+            Group Size: ${preferences.groupSize}
+            Season: ${preferences.season}
+
+            Please provide the itinerary in the following format:
+            Day 1:
+            - Morning: [Activity with time and location]
+            - Afternoon: [Activity with time and location]
+            - Evening: [Activity with time and location]
+            - Accommodation: [Hotel/Stay details]
+            - Meals: [Breakfast/Lunch/Dinner details]
+
+            [Repeat for each day]
+            
+            Make sure all locations and activities are specific to Nepal and actually exist.`
+          }
+        ]
       },
       {
         headers: {
-          'Authorization': `Bearer ${huggingfaceApiKey}`,
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'TourApp',
           'Content-Type': 'application/json'
         }
       }
     );
 
-    res.json({ plan: response.data[0].generated_text });
+    // Get the AI response
+    const plan = response.data.choices[0].message.content;
+    res.json({ plan });
   } catch (error) {
-    console.error('Error getting AI trip plan:', error.response?.data || error.message);
+    console.error('Error generating trip plan:', error);
     res.status(500).json({ 
-      error: 'Failed to get AI trip plan',
+      error: 'Failed to generate trip plan',
       details: error.response?.data?.error || error.message 
     });
   }
@@ -154,7 +168,7 @@ router.post('/trip-plan', async (req, res) => {
 
 // AI Travel Assistant
 router.post('/assistant', async (req, res) => {
-  if (!huggingfaceApiKey) {
+  if (!OPENROUTER_API_KEY) {
     return res.status(503).json({ 
       error: 'AI service is currently unavailable. Please check your API configuration.' 
     });
@@ -168,25 +182,27 @@ router.post('/assistant', async (req, res) => {
     const prompt = `Based on these destinations: ${JSON.stringify(destinations)}\n\nAnswer this question about travel: ${query}\n\nHere's the answer:`;
 
     const response = await axios.post(
-      HUGGINGFACE_API_URL,
+      OPENROUTER_API_URL,
       {
-        inputs: prompt,
-        parameters: {
-          max_length: 200,
-          temperature: 0.7,
-          top_p: 0.95,
-          repetition_penalty: 1.2
-        }
+        model: "deepseek/deepseek-prover-v2:free",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
       },
       {
         headers: {
-          'Authorization': `Bearer ${huggingfaceApiKey}`,
-          'Content-Type': 'application/json'
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "HTTP-Referer": SITE_URL,
+          "X-Title": SITE_NAME,
+          "Content-Type": "application/json"
         }
       }
     );
 
-    res.json({ response: response.data[0].generated_text });
+    res.json({ response: response.data.choices[0].message.content });
   } catch (error) {
     console.error('Error getting AI assistant response:', error.response?.data || error.message);
     res.status(500).json({ 
@@ -319,32 +335,34 @@ router.post('/chat', async (req, res) => {
     }
 
     // Handle other queries with AI
-    if (!huggingfaceApiKey) {
+    if (!OPENROUTER_API_KEY) {
       return res.json({ response: fallbackResponses.chat });
     }
 
     try {
       const response = await axios.post(
-        HUGGINGFACE_API_URL,
+        OPENROUTER_API_URL,
         {
-          inputs: message,
-          parameters: {
-            max_new_tokens: 150,
-            temperature: 0.7,
-            top_p: 0.95,
-            repetition_penalty: 1.2
-          }
+          model: "deepseek/deepseek-prover-v2:free",
+          messages: [
+            {
+              role: "user",
+              content: message
+            }
+          ]
         },
         {
           headers: {
-            'Authorization': `Bearer ${huggingfaceApiKey}`,
-            'Content-Type': 'application/json'
+            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+            "HTTP-Referer": SITE_URL,
+            "X-Title": SITE_NAME,
+            "Content-Type": "application/json"
           }
         }
       );
 
       // Clean and format the response
-      let botResponse = response.data[0].generated_text;
+      let botResponse = response.data.choices[0].message.content;
       botResponse = cleanAiResponse(botResponse);
 
       // If response is too short or empty, use fallback
@@ -354,7 +372,7 @@ router.post('/chat', async (req, res) => {
 
       res.json({ response: botResponse });
     } catch (apiError) {
-      console.error('Hugging Face API Error:', apiError.message);
+      console.error('OpenRouter API Error:', apiError.message);
       // Use fallback response for API errors
       res.json({ response: fallbackResponses.chat });
     }
@@ -368,56 +386,62 @@ router.post('/chat', async (req, res) => {
 const trekSuggestions = {
   easy: [
     {
+      id: "ghorepani",
       name: "Ghorepani Poon Hill Trek",
       description: "A beautiful trek through rhododendron forests with stunning views of the Annapurna range.",
-      duration: 4,
+      duration: 5,
       difficulty: "easy",
       estimatedCost: 800,
-      bestFor: ["Mountain Views", "Nature", "Photography"]
+      bestInterests: ["photography", "nature", "culture"]
     },
     {
+      id: "langtang",
       name: "Langtang Valley Trek",
-      description: "Experience the beautiful Langtang Valley with its diverse flora and fauna.",
+      description: "Experience the rich culture of the Tamang people and beautiful mountain views.",
       duration: 7,
       difficulty: "easy",
       estimatedCost: 1000,
-      bestFor: ["Wildlife", "Nature", "Cultural Experience"]
+      bestInterests: ["culture", "nature", "photography"]
     }
   ],
   moderate: [
     {
+      id: "abc",
       name: "Annapurna Base Camp Trek",
-      description: "Trek to the base camp of the majestic Annapurna massif.",
-      duration: 10,
+      description: "Trek to the base of the majestic Annapurna massif through diverse landscapes.",
+      duration: 12,
       difficulty: "moderate",
-      estimatedCost: 1200,
-      bestFor: ["Mountain Views", "Adventure", "Nature"]
+      estimatedCost: 1500,
+      bestInterests: ["adventure", "nature", "photography"]
     },
     {
+      id: "mardi",
       name: "Mardi Himal Trek",
-      description: "A relatively new trek offering spectacular views of the Annapurna range.",
+      description: "A hidden gem offering spectacular views of the Annapurna range.",
       duration: 8,
       difficulty: "moderate",
-      estimatedCost: 1100,
-      bestFor: ["Mountain Views", "Nature", "Photography"]
+      estimatedCost: 1200,
+      bestInterests: ["adventure", "nature", "photography"]
     }
   ],
   challenging: [
     {
+      id: "ebc",
       name: "Everest Base Camp Trek",
-      description: "The classic trek to the base camp of the world's highest mountain.",
+      description: "The classic trek to the base of the world's highest mountain.",
       duration: 14,
       difficulty: "challenging",
-      estimatedCost: 1500,
-      bestFor: ["Mountain Views", "Adventure", "Cultural Experience"]
+      estimatedCost: 2000,
+      bestInterests: ["adventure", "photography", "achievement"]
     },
     {
+      id: "manaslu",
       name: "Manaslu Circuit Trek",
-      description: "A challenging trek around the eighth highest mountain in the world.",
+      description: "A challenging trek around the world's eighth highest mountain.",
       duration: 16,
       difficulty: "challenging",
-      estimatedCost: 1800,
-      bestFor: ["Adventure", "Mountain Views", "Cultural Experience"]
+      estimatedCost: 2500,
+      bestInterests: ["adventure", "culture", "photography"]
     }
   ]
 };
@@ -425,36 +449,51 @@ const trekSuggestions = {
 // Trek Suggestions Route
 router.post('/trek-suggestions', async (req, res) => {
   try {
-    const { preferences } = req.body;
-    const { duration, difficulty, interests, budget } = preferences;
+    const { duration, difficulty, interests, budget } = req.body;
 
-    // Get base suggestions based on difficulty
-    let suggestions = trekSuggestions[difficulty] || trekSuggestions.moderate;
+    // Filter treks based on preferences
+    let suggestions = [];
+    const allTreks = [
+      ...trekSuggestions.easy,
+      ...trekSuggestions.moderate,
+      ...trekSuggestions.challenging
+    ];
 
-    // Filter by duration if specified
+    // Filter by duration (allow ±2 days range)
     if (duration) {
-      suggestions = suggestions.filter(trek => 
-        Math.abs(trek.duration - parseInt(duration)) <= 2
+      suggestions = allTreks.filter(
+        trek => Math.abs(trek.duration - duration) <= 2
       );
     }
 
-    // Filter by budget if specified
+    // Filter by difficulty
+    if (difficulty) {
+      suggestions = suggestions.length > 0
+        ? suggestions.filter(trek => trek.difficulty === difficulty)
+        : allTreks.filter(trek => trek.difficulty === difficulty);
+    }
+
+    // Filter by budget
     if (budget) {
-      suggestions = suggestions.filter(trek => 
-        trek.estimatedCost <= parseInt(budget)
-      );
+      suggestions = suggestions.length > 0
+        ? suggestions.filter(trek => trek.estimatedCost <= budget)
+        : allTreks.filter(trek => trek.estimatedCost <= budget);
     }
 
-    // Filter by interests if specified
+    // Filter by interests
     if (interests && interests.length > 0) {
-      suggestions = suggestions.filter(trek =>
-        interests.some(interest => trek.bestFor.includes(interest))
-      );
+      suggestions = suggestions.length > 0
+        ? suggestions.filter(trek => 
+            interests.some(interest => trek.bestInterests.includes(interest))
+          )
+        : allTreks.filter(trek => 
+            interests.some(interest => trek.bestInterests.includes(interest))
+          );
     }
 
-    // If no suggestions match the criteria, return some default suggestions
+    // If no suggestions found, return all treks
     if (suggestions.length === 0) {
-      suggestions = trekSuggestions[difficulty] || trekSuggestions.moderate;
+      suggestions = allTreks;
     }
 
     res.json({ suggestions });
@@ -463,6 +502,162 @@ router.post('/trek-suggestions', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to get trek suggestions',
       details: error.message 
+    });
+  }
+});
+
+// Packing List Generator
+router.post('/packing-list', async (req, res) => {
+  try {
+    const { destination, startDate, endDate, activities, specialNeeds } = req.body;
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OpenRouter API key is not configured' });
+    }
+
+    // Call OpenRouter AI API
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'openai/gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful travel assistant that generates detailed packing lists based on trip details.'
+          },
+          {
+            role: 'user',
+            content: `Generate a detailed packing list for a trip to ${destination} from ${startDate} to ${endDate}. 
+            Planned activities: ${activities.join(', ')}. 
+            Special needs: ${specialNeeds || 'None'}. 
+            Include weather considerations, essential items, clothing, toiletries, electronics, first aid, and any additional tips.
+            Format the response as a JSON object with the following structure:
+            {
+              "weatherSummary": "Brief weather summary",
+              "essentials": ["item1", "item2", ...],
+              "clothing": ["item1", "item2", ...],
+              "toiletries": ["item1", "item2", ...],
+              "electronics": ["item1", "item2", ...],
+              "firstAid": ["item1", "item2", ...],
+              "tips": ["tip1", "tip2", ...]
+            }`
+          }
+        ]
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'TourApp',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Parse the AI response
+    const aiResponse = response.data.choices[0].message.content;
+    const packingList = JSON.parse(aiResponse);
+
+    res.json(packingList);
+  } catch (error) {
+    console.error('Error generating packing list:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate packing list',
+      details: error.response?.data?.error || error.message 
+    });
+  }
+});
+
+// Emotion-based Trip Recommender
+router.post('/emotion-trips', async (req, res) => {
+  try {
+    const { mood } = req.body;
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OpenRouter API key is not configured' });
+    }
+
+    // Call OpenRouter AI API
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'openai/gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful travel assistant specializing in Nepalese destinations and experiences. Always respond with valid JSON.'
+          },
+          {
+            role: 'user',
+            content: `Recommend 3 trips in Nepal for someone feeling ${mood}. 
+            Focus only on Nepalese destinations and experiences. Include a mix of:
+            - Cultural experiences (temples, festivals, local life)
+            - Adventure activities (trekking, rafting, wildlife)
+            - Natural attractions (mountains, lakes, national parks)
+            - Spiritual retreats (meditation, yoga, monasteries)
+            
+            Format your response as a JSON array of exactly 3 trip objects, each with these exact fields:
+            {
+              "title": "Trip title",
+              "description": "Brief description",
+              "location": "Specific location in Nepal",
+              "bestTime": "Best time to visit",
+              "moodMatch": 85,
+              "whyThisTrip": "Why this trip matches their mood",
+              "highlights": ["highlight1", "highlight2", "highlight3", "highlight4", "highlight5"]
+            }
+            
+            Make sure the response is valid JSON with no markdown formatting or additional text.
+            All locations must be in Nepal.`
+          }
+        ]
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'TourApp',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Parse the AI response
+    const aiResponse = response.data.choices[0].message.content;
+    
+    // Clean the response to ensure it's valid JSON
+    const cleanedResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+    
+    try {
+      const recommendations = JSON.parse(cleanedResponse);
+      
+      // Validate that all locations are in Nepal
+      const validRecommendations = recommendations.filter(rec => 
+        rec.location.toLowerCase().includes('nepal') || 
+        ['kathmandu', 'pokhara', 'chitwan', 'lumbini', 'bhaktapur', 'patan', 'nagarkot', 
+         'bandipur', 'mustang', 'annapurna', 'everest', 'langtang', 'manaslu'].some(
+           location => rec.location.toLowerCase().includes(location)
+         )
+      );
+
+      if (validRecommendations.length === 0) {
+        throw new Error('No valid Nepalese destinations found in recommendations');
+      }
+
+      res.json({ recommendations: validRecommendations });
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      console.error('Raw AI response:', aiResponse);
+      res.status(500).json({ 
+        error: 'Failed to parse trip recommendations',
+        details: 'Invalid JSON response from AI'
+      });
+    }
+  } catch (error) {
+    console.error('Error generating trip recommendations:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate trip recommendations',
+      details: error.response?.data?.error || error.message 
     });
   }
 });
