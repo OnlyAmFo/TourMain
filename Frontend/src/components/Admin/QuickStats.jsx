@@ -23,27 +23,33 @@ const StatsCard = ({ icon, title, value, change, color }) => (
   </div>
 );
 
-const QuickStats = ({ stats }) => {
+const QuickStats = ({ stats = {} }) => {
+  const safeStats = {
+    totalUsers: Number(stats.totalUsers) || 0,
+    totalBookings: Number(stats.totalBookings) || 0,
+    totalRevenue: Number(stats.totalRevenue) || 0,
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatsCard
         icon={<FaUsers className="w-6 h-6 text-blue-600" />}
         title="Total Users"
-        value={stats.totalUsers}
+        value={safeStats.totalUsers}
         change={12}
         color="bg-blue-100 dark:bg-blue-900/30"
       />
       <StatsCard
         icon={<FaBookmark className="w-6 h-6 text-emerald-600" />}
         title="Total Bookings"
-        value={stats.totalBookings}
+        value={safeStats.totalBookings}
         change={8}
         color="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <StatsCard
         icon={<FaDollarSign className="w-6 h-6 text-yellow-600" />}
         title="Total Revenue"
-        value={`$${stats.totalRevenue.toLocaleString()}`}
+        value={`$${safeStats.totalRevenue.toLocaleString()}`}
         change={15}
         color="bg-yellow-100 dark:bg-yellow-900/30"
       />

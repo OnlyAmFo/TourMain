@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,13 +9,6 @@ import {
   FaChevronDown,
   FaMoon,
   FaSun,
-  FaUserCog,
-  FaRobot,
-  FaMapMarkedAlt,
-  FaChartBar,
-  FaCalendarAlt,
-  FaSuitcase,
-  FaHeart,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import Login from "../Auth/Login";
@@ -28,25 +21,15 @@ const Navbar = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showAIMenu, setShowAIMenu] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const userMenuRef = useRef(null);
 
-  const darkRoutes = new Set([
-    "/best-places",
-    "/blogs",
-    "/dashboard",
-    "/about",
-    "/contact",
-  ]);
+  const darkRoutes = new Set(["/"]);
   const needsDarkNavbar = () => {
-    return (
-      darkRoutes.has(location.pathname) ||
-      /^\/blogs\/\d+$/.test(location.pathname) ||
-      /^\/places\/\d+$/.test(location.pathname)
-    );
+    return darkRoutes.has(location.pathname) && !isScrolled;
   };
 
   // Handle scroll effect
@@ -61,7 +44,19 @@ const Navbar = () => {
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setShowUserMenu(false);
   }, [location]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const navLinks = [
     { path: "/", label: "Home" },
@@ -69,27 +64,6 @@ const Navbar = () => {
     { path: "/blogs", label: "Blogs" },
     { path: "/about", label: "About" },
     { path: "/contact", label: "Contact" },
-    { path: "/trek-suggester", label: "Trek Suggester" },
-  ];
-
-  const aiFeatures = [
-    { path: "/chatbot", label: "AI Assistant", icon: <FaRobot /> },
-    // {
-    //   path: "/tour-recommender",
-    //   label: "Tour Recommender",
-    //   icon: <FaMapMarkedAlt />,
-    // },
-    {
-      path: "/packing-assistant",
-      label: "Smart Packing",
-      icon: <FaSuitcase />,
-    },
-    { path: "/emotion-trips", label: "Mood Trips", icon: <FaHeart /> },
-    {
-      path: "/itinerary-generator",
-      label: "Itinerary Generator",
-      icon: <FaCalendarAlt />,
-    },
   ];
 
   const handleLogout = () => {
@@ -98,274 +72,228 @@ const Navbar = () => {
     navigate("/");
   };
 
-  // Determine navbar background style
   const getNavbarStyle = () => {
     if (isScrolled) {
-      return "bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-800";
+      return isDarkMode
+        ? "bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-700"
+        : "bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200";
     }
     return "bg-transparent";
   };
 
+  const navLinkClasses = (isActive = false) => {
+    const base = "transition-colors duration-200";
+    const useLightText = isDarkMode || needsDarkNavbar();
+
+    if (useLightText) {
+      return `${base} ${isActive ? "text-emerald-400" : "text-white hover:text-emerald-400"}`;
+    }
+
+    return `${base} ${isActive ? "text-emerald-600" : "text-gray-900 hover:text-emerald-600"}`;
+  };
+
+  const buttonTextClass = isDarkMode || needsDarkNavbar()
+    ? "text-white hover:text-emerald-400"
+    : "text-gray-900 hover:text-emerald-600";
+
+  const brandTextClass = isDarkMode || needsDarkNavbar()
+    ? "text-white"
+    : "text-gray-900 dark:text-white";
+
   return (
-    <nav
-      className={`fixed w-full z-50 transition-all duration-300 ${getNavbarStyle()}`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <FaMountain className="text-2xl text-emerald-600" />
-            <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Tour Kings
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors ${
-                  location.pathname === link.path
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : ""
-                }`}
+    <>
+      <nav
+        className={`fixed w-full z-50 transition-all duration-300 ${getNavbarStyle()}`}
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center h-20">
+            <Link to="/" className="flex items-center space-x-3">
+              <FaMountain className="text-2xl text-emerald-600" />
+              <span
+                className={`text-xl font-bold tracking-tight ${brandTextClass}`}
               >
-                {link.label}
-              </Link>
-            ))}
+                Tour Kings
+              </span>
+            </Link>
 
-            {/* AI Features Dropdown */}
-            <div className="relative">
+            <div className="hidden md:flex items-center space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={navLinkClasses(location.pathname === link.path)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
               <button
-                onClick={() => setShowAIMenu(!showAIMenu)}
-                className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-full transition-colors ${buttonTextClass}`}
+                aria-label="Toggle theme"
               >
-                <FaRobot />
-                <span>AI Features</span>
-                <FaChevronDown className="text-xs" />
-              </button>
-              <AnimatePresence>
-                {showAIMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1"
-                  >
-                    {aiFeatures.map((feature) => (
-                      <Link
-                        key={feature.path}
-                        to={feature.path}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => setShowAIMenu(false)}
-                      >
-                        {feature.icon}
-                        <span className="ml-2">{feature.label}</span>
-                      </Link>
-                    ))}
-                  </motion.div>
+                {isDarkMode ? (
+                  <FaSun className="text-yellow-500" />
+                ) : (
+                  <FaMoon className="text-gray-700" />
                 )}
-              </AnimatePresence>
+              </button>
+
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className={`flex items-center space-x-2 ${buttonTextClass}`}
+                  >
+                    <FaUser />
+                    <span>{user.name}</span>
+                    <FaChevronDown className="text-xs" />
+                  </button>
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1"
+                      >
+                        <Link
+                          to={user?.role === "admin" ? "/admin" : "/dashboard"}
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          {user?.role === "admin" ? "Admin Dashboard" : "Dashboard"}
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Logout
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className={`${buttonTextClass} font-medium`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => setShowRegisterModal(true)}
+                    className={`rounded-md bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700`}
+                  >
+                    Register
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Theme Toggle */}
             <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="rounded-full p-2 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 md:hidden"
             >
-              {isDarkMode ? (
-                <FaSun className="text-yellow-500" />
-              ) : (
-                <FaMoon className="text-gray-700" />
-              )}
+              {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
             </button>
+          </div>
 
-            {/* User Menu */}
-            {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                >
-                  <FaUser />
-                  <span>{user.name}</span>
-                  <FaChevronDown className="text-xs" />
-                </button>
-                <AnimatePresence>
-                  {showUserMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1"
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden py-4"
+              >
+                <div className="flex flex-col space-y-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={navLinkClasses(location.pathname === link.path)}
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
+                      {link.label}
+                    </Link>
+                  ))}
+
+                  <button
+                    onClick={toggleDarkMode}
+                    className={`flex items-center ${buttonTextClass}`}
+                  >
+                    {isDarkMode ? (
+                      <>
+                        <FaSun className="mr-2" />
+                        Light Mode
+                      </>
+                    ) : (
+                      <>
+                        <FaMoon className="mr-2" />
+                        Dark Mode
+                      </>
+                    )}
+                  </button>
+
+                  {user ? (
+                    <>
                       <Link
-                        to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        to={user?.role === "admin" ? "/admin" : "/dashboard"}
+                        className={buttonTextClass}
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Dashboard
                       </Link>
                       <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => {
+                          handleLogout();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={buttonTextClass}
                       >
                         Logout
                       </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => setShowRegisterModal(true)}
-                  className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors"
-                >
-                  Register
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden py-4"
-            >
-              <div className="flex flex-col space-y-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 ${
-                      location.pathname === link.path
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : ""
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-                {/* AI Features in Mobile Menu */}
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                    AI Features
-                  </div>
-                  {aiFeatures.map((feature) => (
-                    <Link
-                      key={feature.path}
-                      to={feature.path}
-                      className="flex items-center py-2 text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {feature.icon}
-                      <span className="ml-2">{feature.label}</span>
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Theme Toggle in Mobile Menu */}
-                <button
-                  onClick={toggleDarkMode}
-                  className="flex items-center text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                >
-                  {isDarkMode ? (
-                    <>
-                      <FaSun className="mr-2" />
-                      Light Mode
                     </>
                   ) : (
-                    <>
-                      <FaMoon className="mr-2" />
-                      Dark Mode
-                    </>
+                    <div className="flex flex-col space-y-2">
+                      <button
+                        onClick={() => {
+                          setShowLoginModal(true);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`${buttonTextClass} text-left`}
+                      >
+                        Login
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowRegisterModal(true);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="rounded-md bg-emerald-600 px-4 py-2 text-left text-white transition-colors hover:bg-emerald-700"
+                      >
+                        Register
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </nav>
 
-                {/* User Menu in Mobile */}
-                {user ? (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      className="text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                    >
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex flex-col space-y-2">
-                    <button
-                      onClick={() => {
-                        setShowLoginModal(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400"
-                    >
-                      Login
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowRegisterModal(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors"
-                    >
-                      Register
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Login Modal */}
       <AnimatePresence>
         {showLoginModal && <Login onClose={() => setShowLoginModal(false)} />}
       </AnimatePresence>
 
-      {/* Register Modal */}
       <AnimatePresence>
         {showRegisterModal && (
           <Register onClose={() => setShowRegisterModal(false)} />
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 };
 

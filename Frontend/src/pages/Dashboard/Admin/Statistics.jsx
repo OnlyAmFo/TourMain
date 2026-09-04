@@ -3,13 +3,15 @@ import { adminService } from "../../../services/admin";
 import { notify } from "../../../utils/notifications";
 import QuickStats from "../../../components/Admin/QuickStats";
 
+const defaultStats = {
+  totalUsers: 0,
+  totalBookings: 0,
+  totalRevenue: 0,
+  recentBookings: [],
+};
+
 const Statistics = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    recentBookings: [],
-  });
+  const [stats, setStats] = useState(defaultStats);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ const Statistics = () => {
   const fetchStatistics = async () => {
     try {
       const data = await adminService.getStatistics();
-      setStats(data);
+      setStats({ ...defaultStats, ...(data || {}) });
       setLoading(false);
     } catch (error) {
       notify.error("Failed to fetch statistics");
@@ -28,7 +30,7 @@ const Statistics = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-4">Loading...</div>;
+    return <div className="text-center py-4 text-gray-700 dark:text-gray-200">Loading...</div>;
   }
 
   return (
@@ -44,7 +46,6 @@ const Statistics = () => {
 
       <QuickStats stats={stats} />
 
-      {/* Recent Bookings Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Recent Bookings
@@ -68,27 +69,27 @@ const Statistics = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {stats.recentBookings.map((booking) => (
+              {(stats.recentBookings || []).map((booking) => (
                 <tr
                   key={booking._id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {booking.user.name}
+                      {booking.user?.name || "Unknown User"}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {booking.user.email}
+                      {booking.user?.email || "No email"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {booking.place.title}
+                      {booking.place?.title || "Unknown Place"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {new Date(booking.startDate).toLocaleDateString()}
+                      {booking.startDate ? new Date(booking.startDate).toLocaleDateString() : "—"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -101,7 +102,7 @@ const Statistics = () => {
                             : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                       }`}
                     >
-                      {booking.status}
+                      {booking.status || "pending"}
                     </span>
                   </td>
                 </tr>

@@ -11,6 +11,8 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 const TrekSuggester = () => {
   const [preferences, setPreferences] = useState({
     duration: "",
@@ -33,7 +35,6 @@ const TrekSuggester = () => {
     "Historical Sites",
   ];
 
-  // Add trek images for visual appeal
   const trekImages = [
     "/src/assets/places/1.png",
     "/src/assets/places/2.png",
@@ -64,12 +65,9 @@ const TrekSuggester = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/ai/trek-suggestions",
-        {
-          preferences,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/ai/trek-suggestions`, {
+        preferences,
+      });
 
       setSuggestions(response.data.suggestions);
       setActiveTab("suggestions");
@@ -83,13 +81,10 @@ const TrekSuggester = () => {
   };
 
   const handleViewDetails = (trek) => {
-    // Store the trek details in localStorage for the details page to access
     localStorage.setItem("selectedTrek", JSON.stringify(trek));
-    // Navigate to the trek details page
     navigate("/trek-details");
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -131,7 +126,6 @@ const TrekSuggester = () => {
         </motion.div>
 
         <div className="max-w-5xl mx-auto">
-          {/* Tabs */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex rounded-lg overflow-hidden shadow-md">
               <button
@@ -160,7 +154,6 @@ const TrekSuggester = () => {
             </div>
           </div>
 
-          {/* Form Tab */}
           {activeTab === "form" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -308,7 +301,6 @@ const TrekSuggester = () => {
             </motion.div>
           )}
 
-          {/* Suggestions Tab */}
           {activeTab === "suggestions" && suggestions && (
             <motion.div
               initial={{ opacity: 0 }}

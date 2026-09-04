@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { notify } from "../../utils/notifications";
@@ -12,6 +12,15 @@ const Login = ({ onClose }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const handleChange = (e) => {
     setCredentials({
       ...credentials,
@@ -22,19 +31,19 @@ const Login = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(credentials);
+      const response = await login(credentials);
       notify.success("Logged in successfully!");
       onClose();
-      navigate("/");
+      navigate(response?.user?.role === "admin" ? "/admin" : "/");
     } catch (error) {
       notify.error(error.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-10">
+      <div className="relative z-[100000] my-auto w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">Login</h2>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -50,7 +59,7 @@ const Login = ({ onClose }) => {
               name="email"
               value={credentials.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -63,7 +72,7 @@ const Login = ({ onClose }) => {
               name="password"
               value={credentials.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>

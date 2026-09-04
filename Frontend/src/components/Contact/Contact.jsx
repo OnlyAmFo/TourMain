@@ -6,6 +6,7 @@ import {
   FaWhatsapp,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import api from "../../services/api";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +27,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await api.post("/contact", formData);
       setSubmitStatus("success");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
@@ -57,16 +58,16 @@ const Contact = () => {
     {
       icon: <FaEnvelope className="text-3xl text-blue-500" />,
       title: "Email Us",
-      details: ["info@trekkings.com", "support@trekkings.com"],
-      action: "mailto:info@trekkings.com",
+      details: ["info@tourkings.com", "support@tourkings.com"],
+      action: "mailto:info@tourkings.com",
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
       hoverEffect: "hover:bg-blue-100 dark:hover:bg-blue-900/30",
     },
     {
       icon: <FaMapMarkerAlt className="text-3xl text-red-500" />,
       title: "Visit Us",
-      details: ["Thamel, Kathmandu", "Nepal"],
-      action: "https://maps.google.com/?q=Thamel,Kathmandu",
+      details: ["Damak, Jhapa", "Nepal"],
+      action: "https://maps.google.com/?q=Damak",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       hoverEffect: "hover:bg-red-100 dark:hover:bg-red-900/30",
     },

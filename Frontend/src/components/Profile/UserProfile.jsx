@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 const UserProfile = () => {
   const [profile, setProfile] = useState({
     name: "",
@@ -28,14 +30,11 @@ const UserProfile = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/api/users/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setProfile(response.data);
       setLoading(false);
     } catch (error) {
@@ -66,7 +65,7 @@ const UserProfile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.put("http://localhost:5000/api/users/profile", profile, {
+      await axios.put(`${API_BASE_URL}/users/profile`, profile, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -218,9 +217,6 @@ const UserProfile = () => {
                 <h3 className="text-sm font-medium text-gray-700">
                   Show in Search Results
                 </h3>
-                <p className="text-sm text-gray-500">
-                  Allow your profile to appear in search results
-                </p>
               </div>
               <button
                 type="button"
@@ -243,15 +239,13 @@ const UserProfile = () => {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save profile"}
+        </button>
       </form>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { notify } from "../../utils/notifications";
@@ -14,6 +14,15 @@ const Register = ({ onClose }) => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const handleChange = (e) => {
     setUserData({
       ...userData,
@@ -24,19 +33,19 @@ const Register = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await register(userData);
+      const response = await register(userData);
       notify.success("Registration successful!");
       onClose();
-      navigate("/");
+      navigate(response?.user?.role === "admin" ? "/admin" : "/");
     } catch (error) {
       notify.error(error.response?.data?.message || "Registration failed");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-10">
+      <div className="relative z-[100000] my-auto w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">Register</h2>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -52,7 +61,7 @@ const Register = ({ onClose }) => {
               name="name"
               value={userData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -65,7 +74,7 @@ const Register = ({ onClose }) => {
               name="email"
               value={userData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -78,7 +87,7 @@ const Register = ({ onClose }) => {
               name="password"
               value={userData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -91,7 +100,7 @@ const Register = ({ onClose }) => {
               name="phone"
               value={userData.phone}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
               required
             />
           </div>

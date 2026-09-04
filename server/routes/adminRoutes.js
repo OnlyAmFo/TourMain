@@ -6,6 +6,29 @@ const auth = require('../middleware/auth');
 const Place = require('../models/Place');
 const upload = require('../middleware/upload');
 
+const normalizeBookingPlace = async (booking) => {
+  const bookingObj = booking.toObject ? booking.toObject() : { ...booking };
+
+  if (bookingObj.place && typeof bookingObj.place === 'object') {
+    return bookingObj;
+  }
+
+  const placeId = bookingObj.place;
+
+  if (!placeId) {
+    bookingObj.place = { _id: null, title: 'Unknown Place' };
+    return bookingObj;
+  }
+
+  const place = await Place.findById(placeId).select('title location images pricePerDay').lean();
+
+  bookingObj.place = place
+    ? { ...place, _id: place._id?.toString?.() || placeId }
+    : { _id: placeId, title: 'Unknown Place' };
+
+  return bookingObj;
+};
+
 // Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
@@ -46,11 +69,15 @@ router.get('/bookings', auth, isAdmin, async (req, res) => {
   try {
     const bookings = await Booking.find()
       .populate('user', 'name email')
-      .populate('place', 'title')
       .sort({ createdAt: -1 });
-    res.json(bookings);
+
+    const normalizedBookings = await Promise.all(
+      bookings.map(async (booking) => normalizeBookingPlace(booking))
+    );
+
+    res.json(normalizedBookings);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -73,7 +100,6 @@ router.patch('/bookings/:id', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Add this route to your existing adminRoutes.js
 router.get('/statistics', auth, isAdmin, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
@@ -85,15 +111,18 @@ router.get('/statistics', auth, isAdmin, async (req, res) => {
 
     const recentBookings = await Booking.find()
       .populate('user', 'name email')
-      .populate('place', 'title')
       .sort({ createdAt: -1 })
       .limit(5);
+
+    const normalizedRecentBookings = await Promise.all(
+      recentBookings.map(async (booking) => normalizeBookingPlace(booking))
+    );
 
     res.json({
       totalUsers,
       totalBookings,
       totalRevenue: totalRevenue[0]?.total || 0,
-      recentBookings
+      recentBookings: normalizedRecentBookings,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -138,4 +167,4 @@ router.delete('/places/:id', auth, isAdmin, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

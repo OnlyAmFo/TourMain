@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 const TourSuggestions = () => {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ const TourSuggestions = () => {
 
   const fetchTours = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/tours");
+      const response = await axios.get(`${API_BASE_URL}/tours`);
       setTours(response.data);
       setLoading(false);
     } catch (error) {
@@ -58,7 +60,7 @@ const TourSuggestions = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/tours/recommendations",
+        `${API_BASE_URL}/tours/recommendations`,
         {
           preferences,
         }
@@ -84,7 +86,6 @@ const TourSuggestions = () => {
         Find Your Perfect Tour
       </h2>
 
-      {/* Preferences Form */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,7 +166,6 @@ const TourSuggestions = () => {
         </form>
       </div>
 
-      {/* Tours Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tours.map((tour) => (
           <div

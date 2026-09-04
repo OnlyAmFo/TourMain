@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 const TourDetails = () => {
   const { id } = useParams();
   const [tour, setTour] = useState(null);
@@ -14,7 +16,7 @@ const TourDetails = () => {
 
   const fetchTourDetails = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/tours/${id}`);
+      const response = await axios.get(`${API_BASE_URL}/tours/${id}`);
       setTour(response.data);
       setLoading(false);
     } catch (error) {

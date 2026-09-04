@@ -2,13 +2,22 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import BookingForm from "../Booking/BookingForm";
 import { notify } from "../../utils/notifications";
+import { FaHeart } from "react-icons/fa";
+import { isWishlisted, toggleWishlistItem } from "../../utils/wishlist";
 
 const PlaceDetails = ({ place }) => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const { user } = useAuth();
+  const [liked, setLiked] = useState(isWishlisted(user, place?._id || place?.id));
 
   const handleBookingSuccess = (booking) => {
     notify.success("Booking created successfully!");
+  };
+
+  const handleWishlistToggle = () => {
+    if (!user) return;
+    toggleWishlistItem(user, place);
+    setLiked(isWishlisted(user, place?._id || place?.id));
   };
 
   return (
@@ -19,6 +28,18 @@ const PlaceDetails = ({ place }) => {
           alt={place.title}
           className="w-full h-full object-cover"
         />
+        {user && (
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className={`absolute top-4 left-4 flex h-11 w-11 items-center justify-center rounded-full shadow-md transition-colors ${
+              liked ? "bg-red-500 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+            }`}
+            aria-label="Toggle wishlist"
+          >
+            <FaHeart className={liked ? "fill-current" : ""} />
+          </button>
+        )}
       </div>
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-2">{place.title}</h2>
@@ -51,7 +72,6 @@ const PlaceDetails = ({ place }) => {
           </p>
         )}
 
-        {/* Reviews Section */}
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4">Reviews</h3>
           {place.reviews && place.reviews.length > 0 ? (

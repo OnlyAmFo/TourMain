@@ -1,19 +1,42 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { FaBell, FaSearch } from "react-icons/fa";
 
 const DashboardHeader = ({ user }) => {
   return (
     <div className="bg-white dark:bg-gray-800 h-16 fixed right-0 left-72 top-16 z-10 border-b border-gray-200 dark:border-gray-700 px-8 flex items-center justify-between">
-      <div className="flex items-center flex-1 max-w-xl">
+      <div className="flex items-center flex-1 max-w-xl gap-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Link
+            to="/"
+            className="px-3 py-1.5 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            Home
+          </Link>
+          <Link
+            to="/tours"
+            className="px-3 py-1.5 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            Tours
+          </Link>
+          <Link
+            to="/best-places"
+            className="px-3 py-1.5 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            Places
+          </Link>
+        </div>
+
         <div className="relative w-full">
           <input
             type="text"
             placeholder="Search..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:border-gray-700 dark:text-white"
           />
           <FaSearch className="absolute left-3 top-3 text-gray-400" />
         </div>
       </div>
+
       <div className="flex items-center space-x-4">
         <button className="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
           <FaBell className="w-6 h-6" />

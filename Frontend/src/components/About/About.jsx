@@ -99,7 +99,7 @@ const About = () => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-gray-600 dark:text-gray-300 text-lg mb-8 leading-relaxed"
               >
-                Since 2008, Trek Kings has been crafting unforgettable mountain
+                Since 2008, Tour Kings has been crafting unforgettable mountain
                 experiences in Nepal. We combine local expertise with
                 international safety standards to provide you with the best
                 trekking adventures in the Himalayas.
@@ -190,7 +190,7 @@ const About = () => {
               Meet Our Expert Team
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Our experienced guides and staff are the backbone of Trek Kings,
+              Our experienced guides and staff are the backbone of Tour Kings,
               ensuring your safety and enjoyment throughout your journey.
             </p>
           </motion.div>

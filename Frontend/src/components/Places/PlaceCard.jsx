@@ -4,9 +4,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import BookingForm from "../Booking/BookingForm";
 import api from "../../services/api";
-import { FaMountain, FaClock, FaThermometerHalf } from "react-icons/fa";
+import { FaMountain, FaClock, FaThermometerHalf, FaHeart } from "react-icons/fa";
 import { BsCalendarCheck } from "react-icons/bs";
 import { motion, AnimatePresence } from "framer-motion";
+import { isWishlisted, toggleWishlistItem } from "../../utils/wishlist";
 
 // Animation variants for better organization and reuse
 const cardVariants = {
@@ -45,6 +46,23 @@ const PlaceCard = memo(
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [isBooked, setIsBooked] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [liked, setLiked] = useState(isWishlisted(user, placeData?._id || placeData?.id));
+
+    useEffect(() => {
+      setLiked(isWishlisted(user, placeData?._id || placeData?.id));
+    }, [user, placeData?._id, placeData?.id]);
+
+    const handleBookingSuccess = useCallback(() => {
+      setShowBookingForm(false);
+      setIsBooked(true);
+    }, []);
+
+    const handleWishlistToggle = () => {
+      if (!user) return;
+      const next = toggleWishlistItem(user, { ...placeData, title, location, description, pricePerDay, image: img });
+      setLiked(isWishlisted(user, placeData?._id || placeData?.id));
+      return next;
+    };
 
     // Memoized booking status check
     const checkBookingStatus = useCallback(async () => {
@@ -66,19 +84,6 @@ const PlaceCard = memo(
     useEffect(() => {
       checkBookingStatus();
     }, [checkBookingStatus]);
-
-    const handleBookingSuccess = useCallback(() => {
-      setShowBookingForm(false);
-      setIsBooked(true);
-    }, []);
-
-    // Memoized stats items for better performance
-    const statsItems = [
-      { icon: <FaMountain />, value: placeData.difficulty },
-      { icon: <FaClock />, value: placeData.duration },
-      { icon: <FaThermometerHalf />, value: placeData.altitude },
-      { icon: <BsCalendarCheck />, value: placeData.bestSeason },
-    ];
 
     return (
       <>
@@ -117,6 +122,22 @@ const PlaceCard = memo(
             >
               ${pricePerDay}/day
             </motion.div>
+            {user && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleWishlistToggle();
+                }}
+                className={`absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full shadow-md transition-colors ${
+                  liked ? "bg-red-500 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+                }`}
+                aria-label="Toggle wishlist"
+              >
+                <FaHeart className={liked ? "fill-current" : ""} />
+              </button>
+            )}
           </div>
 
           {/* Content Section */}
@@ -135,7 +156,12 @@ const PlaceCard = memo(
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-2 text-sm">
-              {statsItems.map((item, index) => (
+              {[
+                { icon: <FaMountain />, value: placeData.difficulty },
+                { icon: <FaClock />, value: placeData.duration },
+                { icon: <FaThermometerHalf />, value: placeData.altitude },
+                { icon: <BsCalendarCheck />, value: placeData.bestSeason },
+              ].map((item, index) => (
                 <motion.div
                   key={index}
                   variants={statsItemVariants}

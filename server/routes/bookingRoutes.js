@@ -4,6 +4,69 @@ const Booking = require('../models/Booking');
 const Place = require('../models/Place');
 const auth = require('../middleware/auth');
 
+const fallbackPlaces = {
+  place1: {
+    _id: 'place1',
+    title: 'Everest Base Camp',
+    description: 'The classic trek to the foot of the world\'s highest mountain.',
+    location: 'Khumbu, Nepal',
+    images: ['/assets/places/5.jpg'],
+    pricePerDay: 250,
+    maxGroupSize: 12,
+    featured: true,
+  },
+  place2: {
+    _id: 'place2',
+    title: 'Annapurna Circuit',
+    description: 'A complete journey around the Annapurna massif.',
+    location: 'Annapurna, Nepal',
+    images: ['/assets/places/6.jpg'],
+    pricePerDay: 200,
+    maxGroupSize: 10,
+    featured: true,
+  },
+  place3: {
+    _id: 'place3',
+    title: 'Langtang Valley',
+    description: 'The valley of glaciers, pristine forests and mountain views.',
+    location: 'Langtang, Nepal',
+    images: ['/assets/places/7.jpg'],
+    pricePerDay: 180,
+    maxGroupSize: 8,
+    featured: true,
+  },
+  place4: {
+    _id: 'place4',
+    title: 'Manaslu Circuit',
+    description: 'Experience one of Nepal\'s most authentic treks.',
+    location: 'Manaslu, Nepal',
+    images: ['/assets/places/8.jpg'],
+    pricePerDay: 220,
+    maxGroupSize: 10,
+    featured: true,
+  },
+  place5: {
+    _id: 'place5',
+    title: 'Upper Mustang',
+    description: 'Journey into the hidden kingdom of Lo.',
+    location: 'Mustang, Nepal',
+    images: ['/assets/places/9.jpg'],
+    pricePerDay: 300,
+    maxGroupSize: 8,
+    featured: true,
+  },
+  place6: {
+    _id: 'place6',
+    title: 'Gokyo Lakes',
+    description: 'Visit the stunning turquoise lakes of Gokyo.',
+    location: 'Khumbu, Nepal',
+    images: ['/assets/places/10.jpg'],
+    pricePerDay: 230,
+    maxGroupSize: 10,
+    featured: true,
+  },
+};
+
 // Create a new booking
 router.post('/', auth, async (req, res) => {
   console.log('Received booking request:', req.body);
@@ -15,8 +78,16 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Find the place
-    const place = await Place.findById(placeId).exec();
+    let place = await Place.findById(placeId).exec();
+
+    if (!place && fallbackPlaces[placeId]) {
+      place = await Place.findOneAndUpdate(
+        { _id: placeId },
+        { $set: fallbackPlaces[placeId] },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
     if (!place) {
       return res.status(404).json({ message: 'Place not found' });
     }
@@ -53,7 +124,6 @@ router.post('/', auth, async (req, res) => {
 
     await booking.save();
     
-    // Populate both place and user details
     await booking.populate([
       { 
         path: 'place', 

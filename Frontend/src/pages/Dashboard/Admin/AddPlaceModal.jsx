@@ -68,7 +68,7 @@ const AddPlaceModal = ({ onClose, onSuccess }) => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
           </div>
@@ -82,7 +82,7 @@ const AddPlaceModal = ({ onClose, onSuccess }) => {
               value={formData.description}
               onChange={handleChange}
               rows="3"
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
           </div>
@@ -96,7 +96,7 @@ const AddPlaceModal = ({ onClose, onSuccess }) => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
           </div>
@@ -110,7 +110,7 @@ const AddPlaceModal = ({ onClose, onSuccess }) => {
               name="price"
               value={formData.price}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               required
             />
           </div>
@@ -123,7 +123,7 @@ const AddPlaceModal = ({ onClose, onSuccess }) => {
               type="file"
               name="image"
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 file:mr-3 file:rounded file:border-0 file:bg-emerald-600 file:px-3 file:py-1 file:text-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               accept="image/*"
               required
             />
